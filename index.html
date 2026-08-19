@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cisco Smart Building Solutions</title>
+    <style>
+        :root { --cisco-dark: #07182d; --cisco-blue: #00bceb; --cisco-green: #86BE5B; --text-color: #ffffff; }
+        
+        body { 
+            background: linear-gradient(to bottom, #070b16 0%, #0c1428 50%, #3a1c24 100%);
+            background-attachment: fixed;
+            color: var(--text-color); 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        h1 { text-align: center; color: var(--cisco-blue); margin: 0; padding: 30px 0 20px 0; font-size: 3.0rem; }
+        
+        #canvas { width: 1920px; height: 1080px; position: relative; margin: 0 auto; background: transparent; }
+        
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .flow-line { stroke: var(--cisco-blue); stroke-width: 4; fill: none; opacity: 0.9; stroke-linecap: round; }
+        .flow-line-green { stroke: var(--cisco-green); stroke-width: 4; fill: none; opacity: 0.9; stroke-linecap: round; }
+
+        /* Animation */
+        .flow-dot { fill: var(--cisco-blue); filter: drop-shadow(0 0 5px var(--cisco-blue)); }
+        .flow-dot-green { fill: var(--cisco-green); filter: drop-shadow(0 0 5px var(--cisco-green)); }
+        
+        @keyframes move { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+        .animate-dot { animation: move 3s linear infinite; }
+        .animate-dot-green { animation: move 1s linear infinite; }
+        .dot-hidden { display: none; }
+
+        /* Device Container Logic */
+        .device { 
+            position: absolute; 
+            width: 150px; 
+            height: 150px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 2; 
+            transition: transform 0.3s ease;
+        }
+        .device img { 
+            max-width: 150px; 
+            max-height: 150px; 
+            object-fit: contain; 
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 0px transparent);
+        }
+        .device:hover { transform: scale(1.15); }
+        .device:hover img { filter: drop-shadow(0 0 15px var(--cisco-blue)); }
+
+        #switch { width: 400px; height: 200px; left: 560px; top: 425px; }
+        #switch img { max-width: 400px; max-height: 200px; }
+
+        /* Logo Box Styling */
+        .logo-box { 
+            width: 200px; height: 120px; border: 2px solid rgba(0, 188, 235, 0.4); 
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px; 
+            overflow: hidden;
+        }
+        .logo-box img { max-width: 170px; max-height: 90px; object-fit: contain; }
+        .logo-box-green { border-color: var(--cisco-green); }
+
+        /* Pop-up Bubble - GLASSMORPHISM EFFECT */
+        .bubble { 
+            display: none; 
+            position: absolute; 
+            background: rgba(255, 255, 255, 0.1); /* Semi-transparent */
+            backdrop-filter: blur(15px); /* Frosted blur */
+            -webkit-backdrop-filter: blur(15px); /* Safari support */
+            color: #ffffff; 
+            padding: 10px; 
+            border-radius: 16px; 
+            z-index: 100; 
+            width: 280px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); 
+            border: 1px solid rgba(0, 188, 235, 0.5); /* Subtle blue border */
+            pointer-events: auto;
+        }
+        .bubble h3 { 
+            margin: 0 0 10px 0; 
+            color: var(--cisco-blue); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2); 
+            padding-bottom: 8px; 
+            font-size: 1.2rem; 
+        }
+        .bubble p { font-size: 0.8rem; line-height: 1.5; margin-top: 10px; margin-bottom: 10px; opacity: 0.9; }
+        
+        /* Link Box Styling */
+        .link-container { display: flex; flex-direction: column; gap: 10px; }
+        .bubble a { 
+            color: #ffffff; 
+            font-weight: bold; 
+            text-decoration: none; 
+            font-size: 0.8rem; 
+            text-align: center;
+            border: 1px solid var(--cisco-blue);
+            background: rgba(0, 188, 235, 0.1);
+            padding: 5px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .bubble a:hover { 
+            background: var(--cisco-blue); 
+            color: #000000; 
+            box-shadow: 0 0 15px var(--cisco-blue);
+        }
+    </style>
+</head>
+<body>
+
+<h1>Cisco Smart Building Solutions</h1>
+<div id="canvas">
+    <svg viewBox="0 0 1920 1080">
+        <!-- Lines -->
+        <path id="path1" class="flow-line" d="M 760 450 V 220 H 385 V 160" />
+        <path id="path2" class="flow-line" d="M 760 450 V 220 H 635 V 160" />
+        <path id="path3" class="flow-line" d="M 760 450 V 220 H 885 V 160" />
+        <path id="path4" class="flow-line" d="M 760 450 V 220 H 1135 V 160" />
+        <path id="path5" class="flow-line" d="M 560 525 H 350 V 260 H 290" />
+        <path id="path6" class="flow-line" d="M 560 525 H 350 V 430 H 290" />
+        <path id="path7" class="flow-line" d="M 560 525 H 350 V 620 H 290" />
+        <path id="path8" class="flow-line" d="M 560 525 H 350 V 800 H 290" />
+        <path id="path9" class="flow-line" d="M 960 525 H 1170 V 260 H 1235" />
+        <path id="path10" class="flow-line" d="M 960 525 H 1170 V 430 H 1235" />
+        <path id="path11" class="flow-line" d="M 960 525 H 1170 V 620 H 1235" />
+        <path id="path12" class="flow-line" d="M 960 525 H 1170 V 800 H 1235" />
+        <path id="path-fmp" class="flow-line-green" d="M 760 720 V 600" />
+
+        <!-- Dots -->
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 760 450 V 220 H 385 V 160');" r="6" />
+        <circle id="dot-light" class="flow-dot animate-dot" style="offset-path: path('M 760 450 V 220 H 635 V 160');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 760 450 V 220 H 885 V 160');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 760 450 V 220 H 1135 V 160');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 560 525 H 350 V 260 H 290');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 560 525 H 350 V 430 H 290');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 560 525 H 350 V 620 H 290');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 560 525 H 350 V 800 H 290');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 960 525 H 1170 V 260 H 1235');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 960 525 H 1170 V 430 H 1235');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 960 525 H 1170 V 620 H 1235');" r="6" />
+        <circle class="flow-dot animate-dot" style="offset-path: path('M 960 525 H 1170 V 800 H 1235');" r="6" />
+        <circle class="flow-dot-green animate-dot-green" style="offset-path: path('M 760 720 V 600');" r="6" />
+    </svg>
+
+    <!-- Switch -->
+    <div id="switch" class="device" data-name="Cisco UPOE Switch">
+        <img src="Images/merakims.png" alt="Cisco Switch">
+    </div>
+
+    <!-- Devices -->
+    <div class="device" style="left: 305px; top: 20px;" data-name="IAQ Sensor"><img src="Images/mt15s.png"></div>
+    <div id="device-light" class="device" style="left: 555px; top: 20px;" data-name="LED Light">
+        <img id="device-light-img" src="Images/ledglow.png" alt="LED Light">
+    </div>
+    <div class="device" style="left: 805px; top: 20px;" data-name="POE Gateway"><img src="Images/mht.png"></div>
+    <div class="device" style="left: 1055px; top: 20px;" data-name="POE Shade"><img src="Images/blind.png"></div>
+
+    <div class="device" style="left: 140px; top: 180px;" data-name="Cisco Wi-Fi 7 AP"><img src="Images/ap7.avif"></div>
+    <div class="device" style="left: 140px; top: 360px;" data-name="Meraki Camera"><img src="Images/MV13.png"></div>
+    <div class="device" style="left: 140px; top: 540px;" data-name="Splunk Edge Hub"><img src="Images/edge.png"></div>
+    <div class="device" style="left: 140px; top: 720px;" data-name="POE Powered Desk"><img src="Images/poedesk2.png"></div>
+
+    <div class="device logo-box logo-box-green" style="left: 660px; top: 720px;" data-name="Fault Managed Power">
+        <img src="Images/fmp.png" alt="FMP Logo">
+    </div>
+
+    <div class="device" style="left: 1220px; top: 180px;" data-name="Cisco Table Microphone Pro"><img src="Images/micpro.png"></div>
+    <div class="device" style="left: 1220px; top: 360px;" data-name="Cisco Room Vision PTZ Camera"><img src="Images/ptz.png"></div>
+    <div class="device" style="left: 1220px; top: 540px;" data-name="Cisco Room Navigator"><img src="Images/roomnav.png"></div>
+    <div class="device" style="left: 1220px; top: 720px;" data-name="Cisco Desk Series"><img src="Images/deskg2.png"></div>
+
+    <div class="device logo-box" style="left: 1500px; top: 100px;" data-name="Splunk"><img src="Images/splunk-w.png"></div>
+    <div class="device logo-box" style="left: 1500px; top: 300px;" data-name="Spaces"><img src="Images/cisco-spaces-logo.png"></div>
+    <div class="device logo-box" style="left: 1500px; top: 500px;" data-name="Cisco Cloud Control"><img src="Images/CCC.png"></div>
+    <div class="device logo-box" style="left: 1500px; top: 700px;" data-name="BMS"><img src="Images/bms.png"></div>
+    
+    <!-- Pop-up Bubble -->
+    <div id="bubble" class="bubble">
+        <h3 id="b-name">Product Name</h3>
+        <p id="b-desc">Description will appear here.</p>
+        <div class="link-container">
+            <a id="b-link" href="#" target="_blank" rel="noopener noreferrer">View Product Page →</a>
+            <a id="b-demo-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">View Demo Link →</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const productInfo = {
+        "Cisco UPOE Switch": {
+            desc: "Catalyst 9000 series providing high-density UPOE power for converged IT/OT networks.",
+            url: "https://www.cisco.com/c/en/us/products/switches/catalyst-9300-series-switches/index.html"
+        },
+        "IAQ Sensor": {
+            desc: "Meraki sensors monitoring indoor air quality for WELL building standards.",
+            url: "https://www.cisco.com/site/us/en/products/security/physical-security/meraki-sensors/index.html"
+        },
+        "LED Light": {
+            desc: "PoE-powered lighting solution demonstrating granular control and energy efficiency.",
+            url: "https://www.cisco.com/site/us/en/learn/topics/networking/what-is-poe-lighting.html"
+        },
+        "POE Shade": {
+            desc: "Network-controlled window shades for automated daylight harvesting.",
+            url: "https://www.cisco.com/c/en/us/td/docs/engineering_alliances/Cisco_MHT_Implementation_Guide.html"
+        },
+        "POE Gateway": {
+            desc: "POE Gateway bridging lighting and building automation systems to the Cisco network.",
+            url: "https://www.cisco.com/c/en/us/td/docs/engineering_alliances/Cisco_MHT_Implementation_Guide.html"
+        },
+        "Cisco Wi-Fi 7 AP": {
+            desc: "Next-generation wireless connectivity for high-density smart building environments.",
+            url: "https://www.cisco.com/c/en/us/products/wireless/access-points/index.html"
+        },
+        "Meraki Camera": {
+            desc: "Cisco smart cameras providing physical security and space utilization analytics.",
+            url: "https://meraki.cisco.com/products/smart-cameras/"
+        },
+        "Splunk Edge Hub": {
+            desc: "Edge computing device for real-time building telemetry and observability.",
+            url: "https://www.splunk.com/en_us/solutions/operational-technology-intelligence.html"
+        },
+        "POE Powered Desk": {
+            desc: "PoE Desk integrating power, data, and connectivity into one streamlined solution.",
+            url: "https://www.cisco.com/c/en/us/solutions/collaboration/hybrid-work.html"
+        },
+        "Cisco Table Microphone Pro": {
+            desc: "Intelligent multi-element microphone for high-fidelity audio collaboration.",
+            url: "https://www.webex.com/us/en/devices/accessories/cisco-table-microphone-pro.html"
+        },
+        "Cisco Room Vision PTZ Camera": {
+            desc: "4K Pan-Tilt-Zoom camera providing intelligent tracking for hybrid workspaces.",
+            url: "https://www.webex.com/us/en/devices/cameras/cisco-room-vision-ptz-camera.html"
+        },
+        "Cisco Room Navigator": {
+            desc: "Touch controller for room booking, smart room controls, and environmental sensor data.",
+            url: "https://www.webex.com/us/en/devices/accessories/cisco-room-navigator-for-wall.html"
+        },
+        "Cisco Desk Series": {
+            desc: "All-in-one interactive collaboration devices built for hybrid work.",
+            url: "https://www.webex.com/us/en/devices/desk-series/cisco-desk-pro.html"
+        },
+        "Fault Managed Power": {
+            desc: "FMP delivers DC power over long distances using pulse monitored current for safe delivery.",
+            url: "https://online.flippingbook.com/view/906766654/",
+            demoUrl: "fmps_simulator.html"
+        },
+        "Splunk": {
+            desc: "Unified platform for building security and data-driven observability.",
+            url: "https://www.splunk.com",
+            demoUrl: "https://www.splunk.com/en_us/products/interactive-tours.html"
+        },
+        "Spaces": {
+            desc: "Cisco Spaces cloud platform for location analytics and smart workspace services.",
+            url: "https://spaces.cisco.com",
+            demoUrl: "https://workspaces.ciscospaces.io/?token=756aa7a9-21dd-466f-9c68-7451e4840a03"
+        },
+        "Cisco Cloud Control": {
+            desc: "Cisc Cloud Control, a unified, AI-native operations platform that converges Cisco's entire portfolio into a single management plane.",
+            url: "https://www.cisco.com/site/ae/en/solutions/artificial-intelligence/agentic-ops/cisco-cloud-control/index.html",
+            demoUrl: "https://video.cisco.com/detail/video/6397326373112"
+        },
+        "BMS": {
+            desc: "Building Management System integrations for intelligently aware of occupancy and environment to automatically adjusts HVAC, Lighting, and Shades.",
+            url: "https://spaces.cisco.com/smart-rooms/",
+            demoUrl: "https://youtu.be/9udDHdIGMNs?si=rUO0Hjk8YW6Gz9Se"
+        }
+    };
+
+    let lightIsOn = true;
+    setInterval(() => {
+        const lightImg = document.getElementById('device-light-img');
+        const flowDot = document.getElementById('dot-light');
+        if (lightIsOn) {
+            lightImg.src = "Images/led.png";
+            flowDot.classList.add('dot-hidden');
+        } else {
+            lightImg.src = "Images/ledglow.png";
+            flowDot.classList.remove('dot-hidden');
+        }
+        lightIsOn = !lightIsOn;
+    }, 15000);
+
+    document.addEventListener('click', (e) => {
+        const bubble = document.getElementById('bubble');
+        const canvas = document.getElementById('canvas');
+        const device = e.target.closest('.device');
+        
+        if(device) {
+            const name = device.getAttribute('data-name');
+            const data = productInfo[name] || { desc: "Advanced Cisco Smart Building Solution.", url: "https://www.cisco.com" };
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const x = e.clientX - canvasRect.left;
+            const y = e.clientY - canvasRect.top;
+            
+            bubble.style.display = 'block';
+            bubble.style.left = (x + 10) + 'px';
+            bubble.style.top = (y + 10) + 'px';
+            
+            document.getElementById('b-name').innerText = name;
+            document.getElementById('b-desc').innerText = data.desc;
+            document.getElementById('b-link').href = data.url;
+
+            const demoLink = document.getElementById('b-demo-link');
+            if (data.demoUrl) {
+                demoLink.href = data.demoUrl;
+                demoLink.style.display = 'inline-block';
+            } else {
+                demoLink.style.display = 'none';
+            }
+
+        } else if (!e.target.closest('#bubble')) {
+            bubble.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
